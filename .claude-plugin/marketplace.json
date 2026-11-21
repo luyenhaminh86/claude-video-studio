@@ -1,0 +1,7 @@
+{
+  "name": "claude-video-studio",
+  "owner": { "name": "luyenhaminh86" },
+  "plugins": [
+    { "name": "video-studio", "source": "./plugins/video-studio", "description": "Lets Claude render videos on your computer with ffmpeg." }
+  ]
+}

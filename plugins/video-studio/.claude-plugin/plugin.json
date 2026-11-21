@@ -1,0 +1,6 @@
+{
+  "name": "video-studio",
+  "version": "0.1.0",
+  "description": "Lets Claude render videos on this computer with ffmpeg: text/image scenes, fades, music, plus probing and raw ffmpeg runs.",
+  "license": "MIT"
+}
