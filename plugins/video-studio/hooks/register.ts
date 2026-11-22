@@ -1,6 +1,5 @@
 import type { Register } from 'claude-code'
 
-const TMP = '.video-studio-tmp'
 const TEN_MIN = 600_000
 
 type Scene = {
@@ -106,6 +105,15 @@ export const buildArgs = (input: MakeVideoInput, textFiles: (string | undefined)
   return { args, output, total, W, H, fps }
 }
 
+// Delete a temp file on macOS/Linux (rm) or Windows (cmd del), whichever exists.
+const removeFile = async (
+  $: { process: { run: (argv: readonly string[]) => Promise<{ exitCode: number }> } },
+  p: string,
+): Promise<void> => {
+  const ok = await $.process.run(['rm', '-f', p]).then(r => r.exitCode === 0, () => false)
+  if (!ok) await $.process.run(['cmd', '/c', 'del', '/q', p.replace(/\//g, '\\')]).catch(() => undefined)
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.tool.register({
@@ -206,12 +214,11 @@ export const register: Register = on => {
     }
     if (input.scenes.length > 200) return { deny: 'At most 200 scenes per video.' }
 
-    await $.process.run(['mkdir', '-p', TMP]).catch(() => undefined)
     const stamp = Date.now()
     const textFiles: (string | undefined)[] = []
     for (const [i, s] of input.scenes.entries()) {
       if (typeof s.text === 'string' && s.text.trim() !== '') {
-        const p = `${TMP}/${stamp}-${i}.txt`
+        const p = `.video-studio-${stamp}-${i}.txt`
         await $.fs.write(p, s.text)
         textFiles.push(p)
       } else textFiles.push(undefined)
@@ -226,7 +233,7 @@ export const register: Register = on => {
       $.ui.status(undefined)
       return { deny: `Could not run ffmpeg (is it installed? run /video-check): ${String(err)}` }
     } finally {
-      for (const p of textFiles) if (p) await $.process.run(['rm', '-f', p]).catch(() => undefined)
+      for (const p of textFiles) if (p) await removeFile($, p)
     }
     $.ui.status(undefined)
     if (r.exitCode !== 0) {
